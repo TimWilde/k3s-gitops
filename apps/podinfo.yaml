@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-podinfo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://stefanprodan.github.io/podinfo'
+    chart: podinfo
+    targetRevision: 6.6.0
+    helm:
+      values: |
+        ingress:
+          enabled: true
+          className: traefik
+          annotations:
+            cert-manager.io/cluster-issuer: lan-acme-issuer
+          hosts:
+            - host: podinfo.lan.razor.co.uk
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+          tls:
+            - secretName: podinfo-tls-secret
+              hosts:
+                - podinfo.lan.razor.co.uk
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: demo-podinfo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
